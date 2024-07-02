@@ -2,7 +2,7 @@
 clear all
 
 %%% display original image
-im = imread('testfigure.jpg');
+im = imread('image.jpg');
 figure()
 imshow(im); title('original image')
 
