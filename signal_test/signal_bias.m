@@ -16,7 +16,7 @@ U_xt=U_tx';
 %%% display the snapshots of system, i.e. the data
 figure()
 imagesc(U_xt)
-colorbar()
+colorbar(); title('used data');
 
 X=U_xt(:,1:end-1);
 Y=U_xt(:,2:end);
@@ -34,18 +34,10 @@ tilde_A = U' * Y * V / S;   % is a r*r matrix, DMD
 hat_A = U * tilde_A * U';   % is a m*m matrix (approx A)
 
 matcompare({real_A, A, hat_A}, 'fixmat', 2)
+sgtitle('system matrix')
 
 [tilde_Phi, tilde_Lambda] = eig(tilde_A); tilde_Lambda = diag(tilde_Lambda);
 re_tilde = real(tilde_Lambda); im_tilde = imag(tilde_Lambda);
-
-%%% display the decomposed spectrum and the real ones
-figure()
-hold on
-scatter(re_real, im_real, 'o', 'DisplayName', 'real results')
-scatter(re_tilde, im_tilde, 'x', 'LineWidth', 2, 'DisplayName', 'r-rank results')
-theta = linspace(0, 2*pi, 100); x = cos(theta); y = sin(theta);
-plot(x, y, 'Color', 'black', 'HandleVisibility', 'off')
-title('Eigenvalues'); legend();
 
 %%% try to use difference to approximately debias
 tilde_Phi = U * tilde_Phi;
@@ -59,8 +51,20 @@ for i = 1 : length(tilde_Lambda)
     debias_Phi(:, i) = new_Phi...
         + pinv(tilde_Lambda(i) * eye(size(A)) - hat_A) * (A - hat_A) * new_Phi;
 end
+re_db = real(debias_Lambda); im_db = imag(debias_Lambda);
+
+%%% display the decomposed spectrum and the real ones
+figure()
+hold on
+scatter(re_real, im_real, 'o', 'DisplayName', 'real results')
+scatter(re_tilde, im_tilde, 'x', 'LineWidth', 2, 'DisplayName', 'dmd results')
+scatter(re_db, im_db, 'x', 'LineWidth', 2, 'DisplayName', 'debiased results')
+theta = linspace(0, 2*pi, 100); x = cos(theta); y = sin(theta);
+plot(x, y, 'Color', 'black', 'HandleVisibility', 'off')
+sgtitle('Eigenvalues'); legend();
 
 matdisp({abs(debias_Phi), abs(tilde_Phi)})
+sgtitle('debiased modes and the original modes')
 
 %%% DMD system reconstruction
 ampl = diag(pinv(tilde_Phi) * U_xt(:, 1));    % r*r
@@ -74,8 +78,7 @@ recov_db = real(debias_Phi * ampl * evol);
 
 %%% comparing results
 matdisp({U_xt, recov_dmd, recov_db})
-
-
+sgtitle('system reconstruction results')
 
 
 
