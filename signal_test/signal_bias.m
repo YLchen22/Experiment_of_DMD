@@ -88,6 +88,8 @@ recov_db = real(debias_Phi * ampl * evol);
 matdisp({U_xt, recov_dmd, recov_db})
 sgtitle('system reconstruction results')
 
+figure()
+plot(abs(lambda_term))
 
 
 
