@@ -1,5 +1,6 @@
 %%% reconstruct image using data
-clear all
+clear
+close all
 
 %%% display original image
 im = imread('image.jpg');
