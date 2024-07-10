@@ -27,7 +27,7 @@ real_A = Y * pinv(X);
 re_real = real(real_Lambda); im_real = imag(real_Lambda);
 
 % DMD
-r = 20;
+r = 5;
 [U, S, V] = svds(X, r);
 A = Y * V / S * U';         % is a m*m matrix
 tilde_A = U' * Y * V / S;   % is a r*r matrix, DMD
@@ -46,14 +46,22 @@ debias_Lambda = tilde_Lambda;
 
 for i = 1 : length(tilde_Lambda)
     new_Phi = tilde_Phi(:, i);
-    debias_Lambda(i) = tilde_Lambda(i)...
-        + new_Phi' * (A - hat_A) * new_Phi;
-    debias_Phi(:, i) = new_Phi...
-        + pinv(tilde_Lambda(i) * eye(size(A)) - hat_A) * (A - hat_A) * new_Phi;
+    lambda_term(i) = new_Phi' * (A - hat_A) * new_Phi;
+    debias_Lambda(i) = tilde_Lambda(i) + lambda_term(i);
+    phi_term(:, i) = pinv(tilde_Lambda(i) * eye(size(A)) - hat_A) * (A - hat_A) * new_Phi;
+    debias_Phi(:, i) = new_Phi + phi_term(i);
 end
 re_db = real(debias_Lambda); im_db = imag(debias_Lambda);
 
 %%% display the decomposed spectrum and the real ones
+figure()
+hold on
+scatter(re_real, im_real, 'o', 'DisplayName', 'real results')
+scatter(re_tilde, im_tilde, 'x', 'LineWidth', 2, 'DisplayName', 'dmd results')
+theta = linspace(0, 2*pi, 100); x = cos(theta); y = sin(theta);
+plot(x, y, 'Color', 'black', 'HandleVisibility', 'off')
+sgtitle('Eigenvalues'); legend();
+
 figure()
 hold on
 scatter(re_real, im_real, 'o', 'DisplayName', 'real results')
