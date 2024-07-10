@@ -3,7 +3,7 @@ clear
 close all
 
 x=0:0.01:5; m=length(x); %空间
-t=0:0.05:5; n=length(t); %时间
+t=0:0.05:2; n=length(t); %时间
 Fs=1/(t(2)-t(1)); %采样频率
 [X,T]=meshgrid(x,t);
 

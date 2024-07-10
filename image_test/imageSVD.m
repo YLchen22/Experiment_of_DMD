@@ -13,6 +13,11 @@ imshow(grayim); title('original image (grayscale)')
 
 %%% SVD image
 [U, S, V] = svd(grayim, 'econ');
+singular = diag(S);
+
+figure()
+plot(singular)
+
 r=10;
 U1 = U(:,1:r); S1 = S(1:r,1:r); V1 = V(:,1:r);
 new_im = U1*S1*V1';
