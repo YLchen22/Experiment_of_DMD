@@ -1,4 +1,4 @@
-function f1=plotCylinder_m(VORT,ny,nx)
+function f1=plotCylinder_m(VORT)
 %2022.2.19
 %流场后处理
 %输入变量VORT，为空间变量转化为列向量的流场快照矩阵
@@ -27,3 +27,5 @@ y = 99+25*cos(theta);
 fill(x,y,[.3 .3 .3])  % place cylinder
 plot(x,y,'k','LineWidth',1.2) % cylinder boundary
 set(gcf,'PaperPositionMode','auto') %
+
+colorbar()

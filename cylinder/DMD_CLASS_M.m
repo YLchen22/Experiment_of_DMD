@@ -1,0 +1,40 @@
+function [Dd,b,Phi,Time_DMD,Energy]=DMD_CLASS_M(X,Y)
+%by mingbule 2022.2.22
+%DMD经典算法
+%输入变量X,Y分别为时空矩阵Uxt的1~N-1列以及2~N列
+%输出变量Db为经过DMD分解后排序过的特征值
+%输出变量b为模态对应的初始结果，与模态相乘后可得初始结果Ux1
+%输出变量time_DMD为分解后的时间序列（已排序）
+%输出变量Phi为DMD分解后的模态结果（已排序）
+%输出变量Energy为DMD分解后的模态能力值（已排序）
+N=size(X,2);
+%Step1:对X进行svd分解
+[U,S,V]=svd(X,'econ');
+Sd=diag(S);%将N-1*N-1对角矩阵转换为N-1列矩阵
+r=sum(Sd>1e-6);%筛选出奇异值大于1e-6的数量，逻辑变量求和，避免存在接近0值使得计算出现问题
+U=U(:,1:r);
+S=S(1:r,1:r);
+V=V(:,1:r);
+%Step2:获得转换矩阵A
+A=U'*Y*V/S;
+%Step3:求矩阵A的特征向量及特征值
+[Om,La]=eig(A);
+Dd=diag(La);
+%Step4:计算DMD模态
+Phi=Y*V/S*Om;
+%Step5:计算模态对应的初始值b
+b=Phi\X(:,1);
+%Step6:模态排序（按照能量大小排序）
+Q=Dd.^(0:N-1);%建立范德蒙矩阵来储存特征值变化
+Time_DMD=b.*Q;%获取模态对应的时间系数
+Energy=zeros(size(Phi,2),1);
+for k=1:size(Phi,2)
+    Uxt_DMD_k=real(Phi(:,k)*Time_DMD(k,:));
+    Energy(k)=sum(sum(Uxt_DMD_k.^2));
+end
+[Energy,index]=sort(Energy,'descend');
+Dd=Dd(index);
+b=b(index);
+Phi=Phi(:,index);
+Time_DMD=Time_DMD(index,:);
+end
