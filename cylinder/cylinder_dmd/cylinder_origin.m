@@ -2,8 +2,8 @@
 clc
 clear
 close all
-load CYLINDER_ALL.mat;
-X=VORTALL';
+load cylinder.mat;
+X=data';
 Y=[X;X];
 [U0x,An,phiU,Ds]=POD_SVD_M(Y);
 
@@ -11,28 +11,27 @@ Y=[X;X];
 pic_num = 1;
 for i=1:100
     clf
-    plotCylinder_m(reshape(VORTALL(:,i),nx,ny),nx,ny);
+    plotCylinder_m(reshape(data(:,i),nx,ny));
     %hold on
-    pause(0.05)
     F=getframe(gcf);
     I=frame2im(F);
     [I,map]=rgb2ind(I,256);
     if pic_num == 1
-        imwrite(I,map,'test4.gif','gif','Loopcount',inf,'DelayTime',0.2);
+        imwrite(I,map,'test4.gif','gif','Loopcount',inf,'DelayTime',0.1);
     else
-        imwrite(I,map,'test4.gif','gif','WriteMode','append','DelayTime',0.2);
+        imwrite(I,map,'test4.gif','gif','WriteMode','append','DelayTime',0.1);
     end
     pic_num = pic_num + 1;
 end
 
 %% 查看一下平均流场的信息，并保存图片
-plotCylinder_m(reshape(U0x,nx,ny),nx,ny);
+plotCylinder_m(reshape(U0x,nx,ny));
 print(gcf, '-dpng', '-r600', './U0x.png');
 
 %% 动态展示前十阶POD分解模态结果
 for k=1:10
     clf
-    plotCylinder_m(reshape(An(1,k).*phiU(:,k),nx,ny),nx,ny);
+    plotCylinder_m(reshape(An(1,k).*phiU(:,k),nx,ny));
     drawnow
     pause(0.1)
 end
