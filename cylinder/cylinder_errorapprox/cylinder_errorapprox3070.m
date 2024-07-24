@@ -8,9 +8,9 @@ close all
 load cylinder.mat;  %%% data, nx, ny
 %%% data = 89351 * 151 matrix, we use last 51 time steps as validation set
 valid_data = data(:, 101:151);
-r = 10;
 
 % DMD
+r = 40;
 X = data(:, 1:99); Y = data(:, 2:100);
 step_min = 1; step_max = 51;
 [recon, ~] = dmd_predict(X, Y, r, step_min, step_max);
@@ -19,6 +19,7 @@ recon1 = recon;
 bias1 = valid_data - recon1;
 
 % DMD with half data
+r = 20;
 X = data(:, 1:30); Y = data(:, 2:31);
 step_min = 0; step_max = 120;
 [recon, ~] = dmd_predict(X, Y, r, step_min, step_max);
@@ -55,8 +56,10 @@ hold on
 plot(MSE_DMD)
 plot(MSE_DMDhalf)
 plot(MSE_debiased)
+xlabel('Time step')
+ylabel('MSE of reconstruction')
 legend('MSE of the original DMD prediction',...
-    'MSE of the original DMD prediction with half data',...
+    'MSE of the original DMD prediction with less data',...
     'MSE of the debiased DMD prediction')
 
 %%% visualize the prediction and error
