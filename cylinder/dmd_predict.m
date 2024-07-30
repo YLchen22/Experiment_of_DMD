@@ -10,7 +10,6 @@ tilde_A = U' * Y * V / S;   % is a r*r matrix, DMD
 
 [tilde_Phi, tilde_Lambda] = eig(tilde_A); tilde_Lambda = diag(tilde_Lambda);
 
-%%% try to use difference to approximately debias
 mode = U * tilde_Phi;
 %%% DMD system prediction
 ampl = diag(pinv(mode) * Y(:, end));      % r*r
