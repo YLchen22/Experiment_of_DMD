@@ -8,8 +8,9 @@ load cylinder.mat;  %%% data, nx, ny
 %%% data = 89351 * 151 matrix, we use last 51 time steps as validation set
 
 % DMD
-r = 5; 
-X = data(:, 1:30); Y = data(:, 2:31);
+r = 10;
+n = 100;
+X = data(:, 1:n); Y = data(:, 2:n+1);
 step_min = 0; step_max = 150;
 tic;
 [mode, eigenvalue] = dmd_decom(X, Y, r);
@@ -79,12 +80,25 @@ MSE_trun_db = mean(err3.^2);
 figure()
 hold on
 plot(MSE_DMD, 'DisplayName', 'MSE of the original DMD prediction')
-plot(MSE_full_db, 'DisplayName', 'MSE of the debiased one with econ svd')
+plot(MSE_full_db, 'DisplayName', 'MSE of the debiased eig')
 % plot(MSE_trun_db, 'DisplayName', 'MSE of the debiased one with truncated svd')
-xline(101, '--', 'DisplayName', 'Time step mark')
+xline(n+1, '--', 'DisplayName', 'Time step mark')
 xlabel('Time step')
 ylabel('MSE of reconstruction')
 legend()
+saveas(gcf, [num2str(r), '-', num2str(n) , '.png'])
+
+figure()
+hold on
+plot(MSE_DMD - MSE_full_db)
+xlabel('Time step')
+ylabel('Difference of MSE')
+
+re = real(eigenvalue_b); im = imag(eigenvalue_b);
+figure()
+scatter(re, im)
+xlabel('R(\Delta \lambda)')
+ylabel('I(\Delta \lambda')
 
 
 %%% visualize the prediction and error
