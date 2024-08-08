@@ -24,9 +24,8 @@ err1 = data - recon1;
 % iter DMD and adding error term
 % ez DMD uses 1:61 directly. here uses 1:31 to start and n columns per iter
 
-per_col = 3;    %%% set this thing to decide added data per iter
+per_col = 10;    %%% set this thing to decide added data per iter
 iter = 30 / per_col + 1;
-r = 5;
 
 sum_recon = 0; err = data; %%% don't touch these two
 for i = 1:iter
@@ -57,14 +56,6 @@ end
 
 %%% visualize the MSE of 2 methods
 mse1 = mean(err1.^2);
-mse2 = mean(err.^2);
-figure()
-hold on
-plot(mse1)
-plot(mse2)
-xlabel('Time step')
-ylabel('MSE of reconstruction')
-legend('ez', 'iter')
 
 figure()
 hold on
@@ -83,7 +74,25 @@ for i = 1:iter
 end
 xlabel('Time step')
 ylabel('MSE of reconstruction')
-legend(legendtext)
+legend(legendtext); legend('Location', 'best')
+
+figure()
+hold on
+legendtext = {};
+%%% make lines and legends
+for i = 2:iter
+    mse2 = mean(errs{i}.^2);
+    if i == iter
+        plot(mse2, 'Color', 'blue', 'LineWidth', 1.)
+    else
+        plot(mse2)
+    end
+    str = ['MSE with iter-', num2str(i)];
+    legendtext = [legendtext, str];
+end
+xlabel('Time step')
+ylabel('MSE of reconstruction')
+legend(legendtext); legend('Location', 'best')
 
 %%% visualize the prediction and error
 fig = figure('Position', [100, 100, 1500, 600]);
