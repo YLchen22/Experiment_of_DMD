@@ -7,7 +7,7 @@ pcolor(VORT);
 shading interp;
 load CCcool.mat
 colormap(CC);
-caxis([-min(abs(min(min(VORT))),max(max(VORT))),min(abs(min(min(VORT))),max(max(VORT)))]);
+clim([-min(abs(min(min(VORT))),max(max(VORT))),min(abs(min(min(VORT))),max(max(VORT)))]);
 
 %重置坐标轴
 set(gca,'XTick',[1 50 100 150 200 250 300 350 400 449],'XTickLabel',{'-1','0','1','2','3','4','5','6','7','8'})
@@ -24,7 +24,7 @@ contour(VORT,[linspace(max(max(VORT))/35,max(max(VORT)),6)],'--k','LineWidth',1)
 theta = (1:100)/100'*2*pi;
 x = 49+25*sin(theta);
 y = 99+25*cos(theta);
-fill(x,y,[.3 .3 .3])  % place cylinder
+% fill(x,y,[.3 .3 .3])  % place cylinder
 plot(x,y,'k','LineWidth',1.2) % cylinder boundary
 set(gcf,'PaperPositionMode','auto') %
 

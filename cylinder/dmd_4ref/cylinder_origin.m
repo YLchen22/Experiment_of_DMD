@@ -12,16 +12,17 @@ pic_num = 1;
 for i=1:100
     clf
     plotCylinder_m(reshape(data(:,i),nx,ny));
+    pause(0.1)
     %hold on
-    F=getframe(gcf);
-    I=frame2im(F);
-    [I,map]=rgb2ind(I,256);
-    if pic_num == 1
-        imwrite(I,map,'test4.gif','gif','Loopcount',inf,'DelayTime',0.1);
-    else
-        imwrite(I,map,'test4.gif','gif','WriteMode','append','DelayTime',0.1);
-    end
-    pic_num = pic_num + 1;
+    % F=getframe(gcf);
+    % I=frame2im(F);
+    % [I,map]=rgb2ind(I,256);
+    % if pic_num == 1
+    %     imwrite(I,map,'test4.gif','gif','Loopcount',inf,'DelayTime',0.1);
+    % else
+    %     imwrite(I,map,'test4.gif','gif','WriteMode','append','DelayTime',0.1);
+    % end
+    % pic_num = pic_num + 1;
 end
 
 %% 查看一下平均流场的信息，并保存图片

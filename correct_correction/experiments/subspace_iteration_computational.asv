@@ -1,0 +1,242 @@
+clear
+rng(2024);
+
+% matrix size
+n = 400;
+dim = n;
+% randomly generate eigenvlaues, eigenvectors recover matrix
+[A, evals, evecs] = rand_mat_real(n);
+A_org = A;
+
+% initial state: a certain combination of the eigen-vectors
+x0 = evecs * (1:n)';
+
+% lower rank for dmd, and the steps for the simulation snapshots
+r = 5; steps = 201;
+or_evals = evals(1:r); or_evecs = evecs(:, 1:r);
+
+% simulate snapshots observation
+data = zeros([n, steps]);
+for i = 1:steps
+    data(:, i) = A^(i-1) * x0;
+end
+
+% best for ref
+% X = data(:, 1: end-1); Y = data(:, 2 :end);
+% A = Y * pinv(X);
+A = A_org;
+[evecs, evals] = main_eig(A, r);
+
+init = 10;
+rate = 1;
+
+err_vec = [];
+err_val = [];
+
+for i = 1: steps-init
+    
+    dt = data(:, 1:init+i);
+    X = data(:, 1:init+i-1); Y = data(:, 2:init+i);
+    err_cond(i) = cond(X);
+    
+    % target subspace!
+    [col, S, row] = svd(X, 'econ'); Si = inv(S);
+    Q = col(:, 1:r);  Bq = row * Si(:, 1:r);     % Q == X * Bq ?!
+    if i >= 2
+        err_bnb(i) = norm(Bq - Bnewq, 'fro');
+        Bq = Bnewq;
+        Q = Qnew;
+    end
+
+    %======
+    err_QB(i) = norm(Q - X*Bq, 'fro');    % Q should be in the space of X, is it?
+    %======
+
+    R = Q' * A * Q;
+
+    %====== the form of lower proj R. IMPORTANT!
+    err_R(i) = norm(R - Q'*Y*Bq, 'fro');
+    R = Q'*Y*Bq;
+    %======
+
+    [vr, D] = main_eig(R, r);
+    V = Q * vr; Bv = row * Si(:, 1:r) * vr;    % V == X * Bq ?!
+    %======
+    err_VB(i) = norm(V - X*Bv, 'fro');    % V in the space of X?
+
+    err_YB(i) = norm(A*V - Y*Bv, 'fro');    % A*V in the subspace of Y!???
+    %======
+    
+    Bdu = [];
+    for n = 1:r
+        u = V(:, n);
+
+        term1 = A * u / D(n);
+        term3 = V * pinv( diag(D(n) - D) ) / vr * Q' * A * u - u;
+
+        du(:, n) = term1 + term3;
+
+        % it should also work for the following parameter:
+        Bn = Bv(:, n);  % Uj == D_old*Bj
+
+        temp1 = Bn / D(n);
+        term1 = [0; temp1];
+
+        temp2 = Bv * pinv(diag(D(n) - D)) / vr * Q' * Y * Bn - Bn;
+        term2 = [temp2; 0];
+
+        Bdu(:, n) = term1 + term2;   % dU == Dt*(new_BU-BU)
+    end
+
+    err_du(i) = norm(du - dt * Bdu, 'fro');
+
+    dq = du / vr;
+
+    Bdq = Bdu / vr;
+    err_dq(i) = norm(dq - dt * Bdq, 'fro');
+    dq = dt * Bdq;
+
+    P = Q + dq;
+    %====== error of middle basis
+    Btemp = [Bq; zeros(1, r)] + Bdq;
+    err_temp(i) = norm(P - dt*Btemp, 'fro');
+    %======
+    [Qnew, rt] = qr(P, 'econ');
+    
+    %====== error of new Q
+    Bnewq = Btemp / rt;
+    err_new_q(i) = norm(Qnew - dt * Bnewq, 'fro');
+    %======
+
+    % record error
+    err_vec = [err_vec, vecs_distance(evecs, V)];
+    err_val = [err_val, abs(D - evals)];
+
+end
+
+
+figure()
+hold on
+plot(err_QB)
+plot(err_R)
+plot(err_VB)
+plot(err_YB)
+
+plot(err_du)
+plot(err_dq)
+plot(err_temp)
+plot(err_new_q)
+yscale log
+legend('Q = XB error', 'lower proj error', 'V = XB error', 'A*V = YB error', ...
+    'dU (dV) error', 'dQ error', 'error of middle basis', 'error of new q')
+
+figure()
+hold on
+plot(err_QB)
+plot(err_new_q)
+yscale log
+legend('calculated Q', 'artificial Q')
+
+figure()
+plot(err_bnb)
+
+
+figure('Position', [100, 100, 800, 600])
+subplot(211)
+plot(err_vec)
+yscale log
+subtitle('error of eigenvectors')
+
+subplot(212)
+box on
+hold on
+for i = 1:r
+    plot(err_val(i, :), DisplayName=[num2str(i) '-th \lambda'])
+end
+yscale log
+legend()
+subtitle('error of each eigenvalue')
+
+
+
+
+function [Vs, Ds] = sort_by_val(V, D)
+    %%% simply sort the [eigenvectors, eigenvalues] by the module of
+    %%% eigenvalues
+    eigenvalues = abs(diag(D));
+    [~, indices] = sort(eigenvalues, 'descend');
+    Vs = V(:, indices);
+    D = diag(D);
+    Ds = diag(D(indices));
+end
+
+
+function [Vs, Ds] = main_eig(A, r)
+    %%% simply sort the [eigenvectors, eigenvalues] by the module of
+    %%% eigenvalues
+    [V, D] = eig(A);
+    [Vs, Ds] = sort_by_val(V, D);
+    Vs = Vs(:, 1:r);
+    Ds = diag(Ds(1:r, 1:r));
+end
+
+function [Vs, Ds] = main_eig_left(A, r)
+    %%% simply sort the [eigenvectors, eigenvalues] by the module of
+    %%% eigenvalues
+    A = A';
+    [V, D] = eig(A);
+    [Vs, Ds] = sort_by_val(V, D);
+    Vs = Vs(:, 1:r);
+    Ds = diag(Ds(1:r, 1:r));
+end
+
+% random matrix with complex eigenvalues and vectors
+% (same as the test case of diff-svd)
+function [A, evals, evecs] = rand_mat(n)
+    mat = normrnd(0, 1, [n, n]);
+    [u, ~] = qr(mat);
+    
+    mat = normrnd(0, 1, [n, n]);
+    [v, ~] = qr(mat);
+    
+    s = logspace(1, -1, n);
+    
+    A = u * diag(s) * v';
+    [evecs, evals] = main_eig(A, n);
+end
+
+
+% random matrix with real eigenvalues and vectors
+function [A, evals, evecs] = rand_mat_real(n)
+    evals = logspace(0, -3, n) .* (1 + 0.1*randn(1, n));
+    evecs = rand_col(n, n);
+    A = evecs * diag(evals) / evecs;
+end
+
+function vecs = rand_col(dim, num)
+% generate a matrix of column vecters, randomly genereted with directions
+% input:
+% dim: dimension of the vectors, row of vecs
+% num: number of the random vectors. column of vecs
+% output:
+% vecs: dim*num matrix. each column is a random vector
+vecs = unifrnd(0, 2*pi, [dim, num]);
+vecs = cos(vecs);
+len = vecnorm(vecs, 2, 1);
+vecs = vecs ./ len;
+end
+
+
+function projected_term = ortho_projection(basis, ex_basis)
+    projected_term = ex_basis - basis * basis' * ex_basis;
+end
+
+function err = vecs_distance(vecs1, vecs2)
+    prod = vecs1' * vecs2;
+    diag_err = diag(abs(prod) - eye(size(prod)));
+    err = norm(diag_err, 'fro');
+end
+
+function err = vals_distance(vals1, vals2)
+    err = norm(vals1 - vals2, 'fro');
+end
