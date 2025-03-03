@@ -70,7 +70,7 @@ V = evecs(:, 1:r); D = evals(1:r);
 [Q, Q2V] = qr(evecs);
 cond(Q2V(:, 1:r))
 
-[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r, steps-init);
+[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r, 100);
 [evals_ex, vr_ex, P_ex, B_ex] = online_iteration(data, init, r, 'expensive');
 
 [evals_dmd, evecs_dmd, P_dmd] = ref_by_steps(data, init, r, 'dmd');
@@ -218,12 +218,3 @@ len = vecnorm(vecs, 2, 1);
 vecs = vecs ./ len;
 end
 
-function err = vecs_distance(vecs1, vecs2)
-    prod = vecs1' * vecs2;
-    diag_err = diag(abs(prod) - eye(size(prod)));
-    err = norm(diag_err, 'fro');
-end
-
-function err = vals_distance(vals1, vals2)
-    err = norm(vals1 - vals2, 'fro');
-end
