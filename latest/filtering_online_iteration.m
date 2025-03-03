@@ -1,4 +1,4 @@
-function [record_evals, record_vr, record_P, record_B] = online_iteration(data, init, r, option)
+function [record_evals, record_vr, record_P, record_B] = filtering_online_iteration(data, init, r, option)
 
 % input full data matrix, initial number, and low-rank number.
 % perform CHEAP or EXPENSIVE version of online debiasing DMD (selectable)
@@ -17,10 +17,11 @@ if nargin < 4
 end
 
 steps = size(data, 2);
+cut = 0;    % for filter use
 
 for i = init: steps
 
-    Dt = data(:, 1: i);
+    Dt = data(:, 1+cut: i);
     X = Dt(:, 1: end-1);
     Y = Dt(:, 2: end);
 
@@ -29,12 +30,14 @@ for i = init: steps
         [u, s, v] = svds(X, r);
         Ar = u' * Y * v / s;
         P = u;
-        B = v / s;
+        B = pinv(X) * P;
+    else
+        % after the first, assume P = XB here
+        Ar = P' * Y * B;    % should equal to P' * Y * pinv(X) * P
     end
 
-    % after the first, assume P = XB here
-    Ar = P' * Y * B;    % should equal to P' * Y * pinv(X) * P
     [vr, evals] = main_eig(Ar, r);
+    evecs = P * vr;
 
     %% record current iteration
     record_evals{i} = evals;
@@ -43,7 +46,7 @@ for i = init: steps
     record_B{i} = B;    % P{t} == Dt(:, 1:t-1) * B{t}
     
     %% update!
-    BU_new = [B; zeros(1, r)];
+    B_new = [B; zeros(1, r)];
 
     for j = 1:r
         % these ar verified
@@ -54,15 +57,24 @@ for i = init: steps
         temp2 = B * vr * pinv(lambda_minus) / vr * P' * Y * B * vr(:, j);
         term2 = [temp2; 0];
 
-        BU_new(:, j) = term1 + term2;
+        B_new(:, j) = term1 + term2;
     end
 
-    vecs_new = Dt * BU_new;
-    vecs_new = vecs_new + randn(size(vecs_new)) * 1e-2;
+    %% IMPORTANT!!!
+    % filter: if the first row of B (equivalent to the first column of Dt)
+    % is trivial, remove it
+    thre = 1e-8;
+    while norm(B_new(1, :)) < thre
+        B_new = B_new(2:end, :);
+        cut = cut + 1;
+        Dt = Dt(:, 2:end);
+    end
+    vecs_new = Dt * B_new;
+
     [P_new, R] = qr(vecs_new, 'econ');
-    
+
     if strcmp(option, 'cheap')
-        B_new = BU_new / R;
+        B_new = B_new / R;
     else
         B_new = pinv(Dt) * P_new;   % theoretically, P_new = Dt * B
     end

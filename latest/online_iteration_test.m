@@ -1,4 +1,4 @@
-function [record_evals, record_vr, record_P, record_B] = online_iteration(data, init, r, option)
+function [record_evals, record_vr, record_P, record_B] = online_iteration_test(data, init, r, option)
 
 % input full data matrix, initial number, and low-rank number.
 % perform CHEAP or EXPENSIVE version of online debiasing DMD (selectable)
@@ -58,14 +58,13 @@ for i = init: steps
     end
 
     vecs_new = Dt * BU_new;
-    vecs_new = vecs_new + randn(size(vecs_new)) * 1e-2;
+    vecs_new = vecs_new + eye(size(vecs_new)) * 1e-4;
     [P_new, R] = qr(vecs_new, 'econ');
     
-    if strcmp(option, 'cheap')
-        B_new = BU_new / R;
-    else
-        B_new = pinv(Dt) * P_new;   % theoretically, P_new = Dt * B
-    end
+    redun = 0;
+    Dt_partial = P_new * P_new' * Dt(:, end-r-redun+1: end); % use r+redun columns
+    B_partial = pinv(Dt_partial) * P_new;
+    B_new = [zeros(i-r-redun, r); B_partial];
 
     %% pass to the next iter: 
     P = P_new;

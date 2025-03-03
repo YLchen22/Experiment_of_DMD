@@ -10,20 +10,67 @@ r = 10;     % lower-rank
 
 %% generate matrix and data
 [A_org, evals, evecs] = rand_mat_real(n);
+% [A_org, evals, evecs] = rand_mat_sym(n);
 % [A_org, evals, evecs] = case1(n);
 
-x0 = evecs * ones(n, 1);
-% simulate snapshots observation
+distri = ones(n, 1);
+x0 = evecs * distri;
+% control the beginning distribution of eigenvectors,
+% and simulate snapshots observation
+
 data = zeros([n, steps]);
 data(:, 1) = x0;
 for i = 2:steps
     data(:, i) = A_org * data(:, i-1);
 end
+% data = data + 1e-8 * eye(size(data));
+% data = data + 1e-8 * randn(size(data));
+
+% [qall, ~] = qr(evecs);
+% [qsub, ~] = qr(evecs(:, 1:r));
+% for i = 1:steps
+%     dt = data(:, 1:i);
+%     errall(i) = norm(dt - qall * qall' * dt, 'fro');
+%     errsub(i) = norm(dt - qsub * qsub' * dt, 'fro');
+% end
+% figure()
+% hold on
+% plot(errall)
+% plot(errsub)
+% yscale log
+
+
+% Z = data;
+% for i = 2:steps
+%     x = lsqr(Z(:, 1:i-1), Z(:, i), 1e-8, n);
+%     Z(:, i) = Z(:, i) - Z(:, 1:i-1) * x;
+%     c(i) = cond(Z(:, 1:i));
+%     cd(i) = cond(data(:, 1:i));
+% end
+% figure()
+% hold on
+% plot(c)
+% plot(cd)
+% yscale log
+% 
+
+% win = 10;
+% [q, ~] = qr(evecs(:, 1:win), 'econ');
+% clear c
+% for i = win: steps
+%     Dt = data(:, i-win+1: i);
+%     c(i) = cond(q * q' * Dt);
+% end
+% figure()
+% plot(c)
 
 % reference result
-[V, D] = main_eig(A_org, r);
+V = evecs(:, 1:r); D = evals(1:r);
+% [V, D] = main_eig(A_org, r);
+[Q, Q2V] = qr(evecs);
+cond(Q2V(:, 1:r))
 
-[evals_on, vr_on, P_on, B_on] = online_iteration(data, init, r, 'cheap');
+[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r, 'cheap');
 [evals_ex, vr_ex, P_ex, B_ex] = online_iteration(data, init, r, 'expensive');
 
 [evals_dmd, evecs_dmd, P_dmd] = ref_by_steps(data, init, r, 'dmd');
@@ -88,10 +135,18 @@ for i = 1:9
 end
 
 
+figure()
+clear bnorm
+for i = init: steps
+    bnorm(i) = cond(B_on{i});
+    bnormex(i) = cond(B_ex{i});
+end
+hold on
+plot(bnorm)
+plot(bnormex)
+yscale log
 
-
-
-
+cond(vr_on{init})
 
 
 
@@ -136,6 +191,16 @@ function [A, evals, evecs] = rand_mat_real(n)
     evals(1: k) = logspace(0., -1, k);
     evecs = rand_col(n, n);
     A = evecs * diag(evals) / evecs;
+end
+
+
+% random matrix with real eigenvalues and vectors
+function [A, evals, evecs] = rand_mat_sym(n)
+    k = n/2;
+    evals = logspace(0., -2, n);
+    evals(1: k) = logspace(0., -1, k);
+    [evecs, ~] = qr(randn(n));
+    A = evecs * diag(evals) * evecs';
 end
 
 function vecs = rand_col(dim, num)
