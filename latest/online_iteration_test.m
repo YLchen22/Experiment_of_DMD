@@ -1,4 +1,4 @@
-function [record_evals, record_vr, record_P, record_B] = online_iteration_test(data, init, r, option)
+function [record_evals, record_vr, record_P, record_B] = online_iteration_test(data, init, r, w)
 
 % input full data matrix, initial number, and low-rank number.
 % perform CHEAP or EXPENSIVE version of online debiasing DMD (selectable)
@@ -13,9 +13,10 @@ function [record_evals, record_vr, record_P, record_B] = online_iteration_test(d
 %   and expect: P{i} = X{i} * B{i}
 
 if nargin < 4
-    option = 'cheap';
+    w = 100;
 end
 
+k = 0; r = r+k;
 steps = size(data, 2);
 
 for i = init: steps
@@ -51,20 +52,29 @@ for i = init: steps
         term1 = [0; temp1];
         
         lambda_minus = diag(evals(j) - evals);
-        temp2 = B * vr * pinv(lambda_minus) / vr * P' * Y * B * vr(:, j);
+        temp2 = B * vr * pinv(lambda_minus) / vr * evals(j) * vr(:, j);
         term2 = [temp2; 0];
 
         BU_new(:, j) = term1 + term2;
     end
 
     vecs_new = Dt * BU_new;
-    vecs_new = vecs_new + eye(size(vecs_new)) * 1e-4;
+    % vecs_new = vecs_new + eye(size(vecs_new)) * 1e-4;     
+    % regularization is not necessary, but seems better if added?
     [P_new, R] = qr(vecs_new, 'econ');
     
-    redun = 0;
-    Dt_partial = P_new * P_new' * Dt(:, end-r-redun+1: end); % use r+redun columns
-    B_partial = pinv(Dt_partial) * P_new;
-    B_new = [zeros(i-r-redun, r); B_partial];
+    %% this seems to be a mystery but useful trick...
+    %% 前面额外多乘一项 P_new' * P_new 是用来消除误差的，我也不知道误差从哪来，而且为什么乘完之后就正常了。。。
+
+    % redun = 0;
+    % Dt_proj = P_new' * P_new * P_new' * Dt(:, end-r-redun+1: end); % use r+redun columns
+    % B_proj = pinv(Dt_proj);   % pinv(r * r+redun)
+    % B_new = [zeros(i-r-redun, r); B_proj];
+
+    window = min([i, w]);
+    Dt_proj = P_new' * P_new * P_new' * Dt(:, end-window+1: end); % use w columns
+    B_proj = pinv(Dt_proj);     % pinv(r * i)
+    B_new = [zeros(i-window, r); B_proj];
 
     %% pass to the next iter: 
     P = P_new;

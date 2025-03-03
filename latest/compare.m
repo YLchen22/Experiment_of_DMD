@@ -24,7 +24,7 @@ for i = 2:steps
     data(:, i) = A_org * data(:, i-1);
 end
 % data = data + 1e-8 * eye(size(data));
-% data = data + 1e-8 * randn(size(data));
+data = data + 1e-6 * randn(size(data));     % Robust!
 
 % [qall, ~] = qr(evecs);
 % [qsub, ~] = qr(evecs(:, 1:r));
@@ -70,7 +70,7 @@ V = evecs(:, 1:r); D = evals(1:r);
 [Q, Q2V] = qr(evecs);
 cond(Q2V(:, 1:r))
 
-[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r, 'cheap');
+[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r);
 [evals_ex, vr_ex, P_ex, B_ex] = online_iteration(data, init, r, 'expensive');
 
 [evals_dmd, evecs_dmd, P_dmd] = ref_by_steps(data, init, r, 'dmd');
@@ -135,16 +135,18 @@ for i = 1:9
 end
 
 
-figure()
-clear bnorm
-for i = init: steps
-    bnorm(i) = cond(B_on{i});
-    bnormex(i) = cond(B_ex{i});
-end
-hold on
-plot(bnorm)
-plot(bnormex)
-yscale log
+% figure()
+% clear bnorm
+% for i = init: steps
+%     bnorm(i) = cond(B_on{i});
+%     bnormex(i) = cond(B_ex{i});
+% end
+% hold on
+% plot(bnorm)
+% plot(bnormex)
+% title('Conditional number of the parameter matrix B')
+% legend('online', 'expensive online')
+% yscale log
 
 cond(vr_on{init})
 
