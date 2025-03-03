@@ -70,7 +70,7 @@ V = evecs(:, 1:r); D = evals(1:r);
 [Q, Q2V] = qr(evecs);
 cond(Q2V(:, 1:r))
 
-[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r);
+[evals_on, vr_on, P_on, B_on] = online_iteration_test(data, init, r, steps-init);
 [evals_ex, vr_ex, P_ex, B_ex] = online_iteration(data, init, r, 'expensive');
 
 [evals_dmd, evecs_dmd, P_dmd] = ref_by_steps(data, init, r, 'dmd');

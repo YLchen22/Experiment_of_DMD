@@ -71,9 +71,10 @@ for i = init: steps
     % B_proj = pinv(Dt_proj);   % pinv(r * r+redun)
     % B_new = [zeros(i-r-redun, r); B_proj];
 
-    window = min([i, w]);
+    % window = min([i, w]);
+    window = i-r;   % surprisingly...
     Dt_proj = P_new' * P_new * P_new' * Dt(:, end-window+1: end); % use w columns
-    B_proj = pinv(Dt_proj);     % pinv(r * i)
+    B_proj = pinv(Dt_proj);     % pinv(r * window):   THIS IS CHEAP
     B_new = [zeros(i-window, r); B_proj];
 
     %% pass to the next iter: 
