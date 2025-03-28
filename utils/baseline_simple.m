@@ -20,6 +20,8 @@ for i = init: steps
 
     if strcmp(option, 'dmd')
         [vr, evals, P] = simple_dmd(X, Y, r);
+    elseif strcmp(option, 'tdmd')
+        [evals, vr, P] = tdmd(X, Y, r);
     else
         [evecs, evals] = main_eig(Y*pinv(X), r);
         [P, ~] = qr(evecs, 'econ');

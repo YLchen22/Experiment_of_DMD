@@ -62,7 +62,7 @@ for i = init: steps
         BU_new(:, j) = term1 + term2;
     end
     
-    alpha = 0.1;  norm = 0;
+    alpha = 1;  norm = 0.;
     % vecs_new = Dt*BU_new;
     vecs_new = P*vr + alpha*(Dt * BU_new - P*vr) + norm * eye(n, r);
     % vecs_new = P*vr + alpha*(eye(n) - P*P')*(Dt * BU_new - P*vr) + norm * eye(n, r);
@@ -79,8 +79,11 @@ for i = init: steps
     % Dt_proj = P_new' * P_new * P_new' * Dt(:, end-r-redun+1: end); % use r+redun columns
     % B_proj = pinv(Dt_proj);   % pinv(r * r+redun)
     % B_new = [zeros(i-r-redun, r); B_proj];
-    
-    Dt_proj = P_new' * P_new * P_new' * Y; % use w columns
+    if window < w
+        Dt_proj = P_new' * P_new * P_new' * Dt; % use w columns
+    else
+        Dt_proj = P_new' * P_new * P_new' * Y; % use w columns
+    end
     B_proj = pinv(Dt_proj);     % pinv(r * window):   THIS IS CHEAP
     B_new = B_proj;
 

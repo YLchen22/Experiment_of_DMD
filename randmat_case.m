@@ -13,7 +13,7 @@ w = init;
 [A_org, evals, evecs] = rand_mat_real(n);
 % [A_org, evals, evecs] = rand_mat_sym(n);
 % [A_org, evals, evecs] = case3(n);
-[A_org, evals, evecs] = case2(n);
+% [A_org, evals, evecs] = case2(n);
 % [A_org, evals, evecs] = rand_mat(n);
 
 evecs_ = evecs; evals_ = evals;
@@ -50,7 +50,7 @@ end
 
 
 % data = data + 1e-8 * eye(size(data));
-% data = data + 1e-6 * randn(size(data));     % Robust!
+data = data + 1e-6 * randn(size(data));     % Robust!
 
 % [qall, ~] = qr(evecs);
 % [qsub, ~] = qr(evecs(:, 1:r));
@@ -111,11 +111,11 @@ cond(Q2V(:, 1:r))
 new_x0 = evecs * (rand(n, 1)*2 + 1);
 % new_x0 = data(:, 1);
 % new_x0 = data(:, end);
-t = 10000;
+t = 20000;
 p_data = zeros([n, t]);
 p_data(:, 1) = new_x0; 
 pred_real = p_data; pred_on = p_data; pred_dmd = p_data;
-A_real = V * diag(D) * pinv(V);
+A_real = V * diag(D) * pinv(V); A_real = data(:, 2:end) * pinv(data(:, 1: end-1));
 A_on = P_on{end} * vr_on{end} * diag(evals_on{end}) / vr_on{end} * P_on{end}';
 A_dmd = P_dmd{end} * vr_dmd{end} * diag(evals_dmd{end}) / vr_dmd{end} * P_dmd{end}';
 for i = 2:t
